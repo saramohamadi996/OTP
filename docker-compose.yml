@@ -1,0 +1,82 @@
+version: '2'
+services:
+
+  #PHP Service
+  otp-app:
+    build:
+      context: .
+      dockerfile: app.dockerfile
+    container_name: otp-app
+    tty: true
+    environment:
+      SERVICE_NAME: otp-app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/server
+#    env_file: './app/.env.local'
+    volumes:
+      - ./app:/var/www/server
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - otp-network
+    depends_on:
+      - otp-mysql
+    command: /bin/bash -c "php-fpm | /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf"
+
+
+  #Nginx Service
+  otp-webserver:
+    build:
+      context: ./
+      dockerfile: webserver.dockerfile
+    container_name: otp-webserver
+    tty: true
+    ports:
+      - "8077:80"
+#      - "443:443"
+    volumes:
+      - ./app:/var/www/server
+    depends_on:
+      - otp-app
+    networks:
+      - otp-network
+
+
+  #MySQL Service
+  otp-mysql:
+    image: mysql:8.0
+    container_name: otp-mysql
+    restart: always
+    tty: true
+#    ports:
+#      - "33039:3306"
+    environment:
+      MYSQL_DATABASE: otp
+      MYSQL_ROOT_PASSWORD: s433FF_f4sdfeD3edd4fRfD
+      MYSQL_PASSWORD: s433FF_f4sdfeD3edd4fRfD
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - otp_data:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - otp-network
+
+
+volumes:
+  otp_data:
+    driver: local
+
+
+networks:
+  otp-network:
+    driver: bridge
+#    external: true
+
+
+
+
+
+
+
+
+                        
